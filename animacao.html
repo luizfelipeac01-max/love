@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>I LOVE YOU</title>
+
+<style>
+body {
+  margin: 0;
+  background: radial-gradient(circle at center, #111, #000);
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+button {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+
+  padding: 14px 32px;
+  font-size: 15px;
+  letter-spacing: 2px;
+
+  background: rgba(255,255,255,0.05);
+  color: #fff;
+
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 12px;
+
+  backdrop-filter: blur(10px);
+
+  cursor: pointer;
+  transition: 0.4s;
+}
+
+button:hover {
+  transform: translate(-50%, -50%) scale(1);
+  background: rgba(255,255,255,0.1);
+}
+</style>
+</head>
+
+<body>
+
+<button id="btn">Clique aqui</button>
+<canvas id="tela"></canvas>
+
+<script>
+const canvas = document.getElementById("tela");
+const ctx = canvas.getContext("2d");
+const btn = document.getElementById("btn");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+window.onresize = () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+};
+
+// ⭐ estrelas
+let estrelas = [];
+for (let i = 0; i < 120; i++) {
+  estrelas.push({
+    x: Math.random()*canvas.width,
+    y: Math.random()*canvas.height,
+    v: Math.random()*0.3
+  });
+}
+
+let blocos = [];
+let estado = "inicio";
+let tempo = 0;
+
+// ===== FRASE (pixel) =====
+const letras = {
+  I:["111","010","010","010","111"],
+  L:["100","100","100","100","111"],
+  O:["111","101","101","101","111"],
+  V:["101","101","101","101","010"],
+  E:["111","100","111","100","111"],
+  Y:["101","101","010","010","010"],
+  U:["101","101","101","101","111"]
+};
+
+function criarFrase() {
+  blocos = [];
+
+  let texto = ["I"," ","L","O","V","E"," ","Y","O","U"];
+
+  let tamanho = 8;
+  let larguraLetra = 3 * tamanho;
+  let espacamento = 12;
+
+  let larguraTotal = texto.length * (larguraLetra + espacamento);
+
+  let startX = canvas.width/2 - larguraTotal/2;
+  let startY = canvas.height/2 - 40;
+
+  texto.forEach((letra, i) => {
+    if (letra === " ") return;
+
+    letras[letra].forEach((linha, y) => {
+      linha.split("").forEach((c, x) => {
+        if (c === "1") {
+          let px = startX + i*(larguraLetra+espacamento) + x*tamanho;
+          let py = startY + y*tamanho;
+
+          blocos.push({
+            x: Math.random()*canvas.width,
+            y: Math.random()*canvas.height,
+            destinoX: px,
+            destinoY: py
+          });
+        }
+      });
+    });
+  });
+}
+
+// ❤️ coração
+function gerarCoracao() {
+  const mapa = [
+    "01100110",
+    "11111111",
+    "11111111",
+    "11111111",
+    "11111111",
+    "01111110",
+    "00111100",
+    "00011000"
+  ];
+
+  let pontos = [];
+
+  mapa.forEach((linha,y)=>{
+    linha.split("").forEach((c,x)=>{
+      if(c==="1"){
+        pontos.push({
+          x: canvas.width/2 -120 + x*30,
+          y: canvas.height/2 -120 + y*30
+        });
+      }
+    });
+  });
+
+  return pontos;
+}
+
+let coracao = gerarCoracao();
+
+// clique
+btn.onclick = () => {
+  btn.style.display = "none";
+  estado = "frase";
+  criarFrase();
+
+  setTimeout(()=>{
+    estado = "coracao";
+
+    blocos.forEach((b,i)=>{
+      let p = coracao[i % coracao.length];
+      b.destinoX = p.x;
+      b.destinoY = p.y;
+    });
+  },3000);
+};
+
+// animação
+function animar() {
+
+  // fundo
+  ctx.fillStyle = "rgba(0,0,0,0.3)";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // estrelas
+  ctx.fillStyle = "white";
+  estrelas.forEach(e=>{
+    e.y += e.v;
+    if(e.y > canvas.height) e.y = 0;
+    ctx.fillRect(e.x,e.y,2,2);
+  });
+
+  if (estado !== "inicio") {
+
+    let escala = 1;
+
+    if (estado === "coracao") {
+      escala = 1 + Math.pow(Math.sin(tempo),3)*0.2;
+      tempo += 0.08;
+    }
+
+    ctx.shadowBlur = 25;
+    ctx.shadowColor = "#ff4d6d";
+    ctx.fillStyle = "#ff4d6d";
+
+    blocos.forEach(b=>{
+      let cx = canvas.width/2;
+      let cy = canvas.height/2;
+
+      let alvoX = cx + (b.destinoX - cx)*escala;
+      let alvoY = cy + (b.destinoY - cy)*escala;
+
+      b.x += (alvoX - b.x)*0.08;
+      b.y += (alvoY - b.y)*0.08;
+
+      ctx.fillRect(b.x,b.y,8,8);
+    });
+  }
+
+  requestAnimationFrame(animar);
+}
+
+animar();
+</script>
+
+</body>
+</html>
